@@ -2,6 +2,110 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { z } from "zod";
 import { CONFIG_PATH, GNAMI_HOME } from "../utils/paths.js";
 
+const integrationsSchema = z
+  .object({
+    whatsapp: z
+      .object({
+        enabled: z.boolean().default(false),
+        accessToken: z.string().min(1).optional(),
+        phoneNumberId: z.string().min(1).optional(),
+        baseUrl: z.string().url().optional()
+      })
+      .default({ enabled: false }),
+    telegram: z
+      .object({
+        enabled: z.boolean().default(false),
+        botToken: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    discord: z
+      .object({
+        enabled: z.boolean().default(false),
+        botToken: z.string().min(1).optional(),
+        defaultChannelId: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    slack: z
+      .object({
+        enabled: z.boolean().default(false),
+        botToken: z.string().min(1).optional(),
+        defaultChannel: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    signal: z
+      .object({
+        enabled: z.boolean().default(false),
+        signalCliPath: z.string().min(1).optional(),
+        accountNumber: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    imessage: z
+      .object({
+        enabled: z.boolean().default(false),
+        senderAccount: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    spotify: z
+      .object({
+        enabled: z.boolean().default(false),
+        accessToken: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    hue: z
+      .object({
+        enabled: z.boolean().default(false),
+        bridgeIp: z.string().min(1).optional(),
+        appKey: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    obsidian: z
+      .object({
+        enabled: z.boolean().default(false),
+        vaultPath: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    twitter: z
+      .object({
+        enabled: z.boolean().default(false),
+        bearerToken: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    browser: z
+      .object({
+        enabled: z.boolean().default(false),
+        debuggerUrl: z.string().url().optional()
+      })
+      .default({ enabled: false }),
+    gmail: z
+      .object({
+        enabled: z.boolean().default(false),
+        accessToken: z.string().min(1).optional()
+      })
+      .default({ enabled: false }),
+    github: z
+      .object({
+        enabled: z.boolean().default(false),
+        token: z.string().min(1).optional(),
+        baseUrl: z.string().url().optional()
+      })
+      .default({ enabled: false })
+  })
+  .default({
+    whatsapp: { enabled: false },
+    telegram: { enabled: false },
+    discord: { enabled: false },
+    slack: { enabled: false },
+    signal: { enabled: false },
+    imessage: { enabled: false },
+    spotify: { enabled: false },
+    hue: { enabled: false },
+    obsidian: { enabled: false },
+    twitter: { enabled: false },
+    browser: { enabled: false },
+    gmail: { enabled: false },
+    github: { enabled: false }
+  });
+
 const configSchema = z.object({
   gateway: z
     .object({
@@ -49,7 +153,8 @@ const configSchema = z.object({
       userIdPrefix: z.string().min(1).default("gnamiai"),
       entityName: z.string().min(1).optional()
     })
-    .default({ enabled: false, provider: "none", userIdPrefix: "gnamiai" })
+    .default({ enabled: false, provider: "none", userIdPrefix: "gnamiai" }),
+  integrations: integrationsSchema
 });
 
 export type GnamiConfig = z.infer<typeof configSchema>;
@@ -64,7 +169,22 @@ const defaultConfig: GnamiConfig = {
     localBaseUrl: "http://127.0.0.1:11434/v1"
   },
   channels: { webchat: { enabled: true } },
-  memory: { enabled: false, provider: "none", userIdPrefix: "gnamiai" }
+  memory: { enabled: false, provider: "none", userIdPrefix: "gnamiai" },
+  integrations: {
+    whatsapp: { enabled: false },
+    telegram: { enabled: false },
+    discord: { enabled: false },
+    slack: { enabled: false },
+    signal: { enabled: false },
+    imessage: { enabled: false },
+    spotify: { enabled: false },
+    hue: { enabled: false },
+    obsidian: { enabled: false },
+    twitter: { enabled: false },
+    browser: { enabled: false },
+    gmail: { enabled: false },
+    github: { enabled: false }
+  }
 };
 
 export async function loadConfig(): Promise<GnamiConfig> {

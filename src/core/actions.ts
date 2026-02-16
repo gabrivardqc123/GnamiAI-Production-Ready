@@ -1,9 +1,12 @@
 import { spawn } from "node:child_process";
 import { installSkill } from "./skills.js";
+import type { IntegrationName } from "../integrations/types.js";
+import type { IntegrationRuntime } from "../integrations/runtime.js";
 
 export type AgentAction =
   | { type: "shell"; command: string; timeoutMs?: number }
-  | { type: "install_skill"; name: string; content: string };
+  | { type: "install_skill"; name: string; content: string }
+  | { type: "integration"; app: IntegrationName; action: string; params?: Record<string, unknown> };
 
 export interface ActionResult {
   action: AgentAction;
@@ -43,6 +46,21 @@ export function parseAgentActions(text: string): AgentAction[] {
         type: "install_skill",
         name: record.name,
         content: record.content
+      });
+    }
+    if (
+      record.type === "integration" &&
+      typeof record.app === "string" &&
+      typeof record.action === "string"
+    ) {
+      actions.push({
+        type: "integration",
+        app: record.app as IntegrationName,
+        action: record.action,
+        params:
+          record.params && typeof record.params === "object" && !Array.isArray(record.params)
+            ? (record.params as Record<string, unknown>)
+            : undefined
       });
     }
   }
@@ -89,7 +107,10 @@ async function execShell(command: string, timeoutMs: number): Promise<string> {
   });
 }
 
-export async function executeAgentActions(actions: AgentAction[]): Promise<ActionResult[]> {
+export async function executeAgentActions(
+  actions: AgentAction[],
+  options?: { integrations?: IntegrationRuntime }
+): Promise<ActionResult[]> {
   const results: ActionResult[] = [];
   for (const action of actions) {
     try {
@@ -103,6 +124,18 @@ export async function executeAgentActions(actions: AgentAction[]): Promise<Actio
         results.push({ action, ok: true, output: `Installed skill: ${skillId}` });
         continue;
       }
+      if (action.type === "integration") {
+        if (!options?.integrations) {
+          throw new Error("Integration runtime is not available.");
+        }
+        const result = await options.integrations.exec({
+          app: action.app,
+          action: action.action,
+          params: action.params
+        });
+        results.push({ action, ok: true, output: JSON.stringify(result) });
+        continue;
+      }
       results.push({ action, ok: false, output: "Unsupported action type." });
     } catch (error) {
       results.push({
@@ -114,4 +147,3 @@ export async function executeAgentActions(actions: AgentAction[]): Promise<Actio
   }
   return results;
 }
-

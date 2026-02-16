@@ -11,11 +11,15 @@ GnamiAI is a local-first personal AI gateway + CLI with real providers, real cha
 - Local gateway (`127.0.0.1:18789` by default)
 - WebChat (WebSocket)
 - Telegram channel (real Bot API polling/send)
+- App integrations via skills/connectors: WhatsApp, Telegram, Discord, Slack, Signal, iMessage, Spotify, Hue, Obsidian, Twitter/X, Browser, Gmail, GitHub, and more
+- Native adapters included for: WhatsApp, Telegram, Discord, Slack, Signal, iMessage, Spotify, Hue, Obsidian, Twitter/X, Browser (CDP), Gmail, GitHub
 - Pairing approval flow for unknown senders
 - OpenAI (Codex OAuth/API key) + local model provider
 - OpenAI model strategy: `gpt-5.3-codex` with fallback `gpt-5.2-codex`
 - Local model strategy via `local/<model>` using OpenAI-compatible endpoint (default Ollama `http://127.0.0.1:11434/v1`)
 - Optional Mem0 external memory
+- Browser Control: browse the web, fill forms, and extract data from sites through browser automation tools
+- Full System Access: read/write files, run shell commands, execute scripts; run sandboxed or full-access based on runtime policy
 
 ## Requirements
 
@@ -100,4 +104,16 @@ Then open `http://127.0.0.1:18789/`.
 gnamiai doctor
 gnamiai pairing approve webchat <code>
 gnamiai pairing approve telegram <code>
+gnamiai integration list
+gnamiai integration configure --app github
+gnamiai integration health --app github
+gnamiai integration exec --app github --action create_issue --params '{"owner":"org","repo":"repo","title":"Test issue","body":"Created by GnamiAI"}'
+```
+
+## Integration Setup
+
+Each native adapter is configured with real credentials and endpoints (no mocked adapters). Run:
+
+```powershell
+gnamiai integration configure
 ```

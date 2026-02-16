@@ -14,6 +14,7 @@ import type { RawData, WebSocket } from "ws";
 import { MemoryService } from "../core/memory.js";
 import { hasSkill, installSkill, listSkills } from "../core/skills.js";
 import { executeAgentActions, parseAgentActions, stripAgentActions } from "../core/actions.js";
+import { createIntegrationRuntime } from "../integrations/runtime.js";
 import {
   buildWorkspaceContext,
   ensureWorkspaceDocs,
@@ -144,15 +145,8 @@ function personaPrompt(persona: Required<PersonaFields>): string {
   if (missing.length === 0) {
     return "";
   }
-  const known = [
-    persona.assistantName ? `assistant=${persona.assistantName}` : null,
-    persona.language ? `language=${persona.language}` : null,
-    persona.userName ? `user=${persona.userName}` : null
-  ].filter(Boolean);
   return [
-    `I saved your progress. Still needed: ${missing.join(", ")}.`,
     "Give me a name for me, your language, and your name to get started.",
-    known.length > 0 ? `Current profile: ${known.join("; ")}` : "",
     "Format: assistant=<name>; language=<language>; user=<your-name>"
   ].join("\n");
 }
@@ -161,6 +155,7 @@ export async function startGateway(options: GatewayOptions): Promise<void> {
   const store = await Store.open();
   const agent = new AgentRuntime(options.config);
   const memory = new MemoryService(options.config);
+  const integrations = createIntegrationRuntime(options.config);
   const startedAt = new Date().toISOString();
   await ensureWorkspaceDocs();
   const app = Fastify({ loggerInstance: options.logger });
@@ -263,39 +258,12 @@ export async function startGateway(options: GatewayOptions): Promise<void> {
       const parsedPersona = parsePersonaInput(message.content);
       if (!persona.userName || !persona.language) {
         if (!parsedPersona.assistantName && !parsedPersona.userName && !parsedPersona.language) {
-          const alreadyPrompted = history.some(
-            (entry) =>
-              entry.direction === "outbound" &&
-              entry.content.includes("Give me a name for me, your language, and your name to get started.")
-          );
-          const prompt = alreadyPrompted
-            ? `Still needed: ${[
-                !persona.assistantName ? "assistant name" : null,
-                !persona.language ? "language" : null,
-                !persona.userName ? "your name" : null
-              ]
-                .filter(Boolean)
-                .join(", ")}. Format: assistant=<name>; language=<language>; user=<your-name>`
-            : personaPrompt(persona);
+          const prompt = personaPrompt(persona);
           store.addMessage(sessionId, "outbound", prompt);
           await message.reply(prompt);
           return;
         }
         const updated = await applyPersonaSetup(options.config, parsedPersona);
-        try {
-          const write = await memory.addConversationMemory(
-            userScopedId,
-            `Persona setup input: ${message.content}`,
-            `Persona profile updated: assistant=${updated.assistantName}; language=${updated.language || "missing"}; user=${updated.userName || "missing"}`
-          );
-          store.addMemoryEvent(userScopedId, "saved", `persona-setup backend:${write.backend}`);
-        } catch (error) {
-          store.addMemoryEvent(
-            userScopedId,
-            "failed",
-            `persona-setup ${error instanceof Error ? error.message : String(error)}`
-          );
-        }
         if (!updated.userName || !updated.language) {
           const prompt = personaPrompt(updated);
           store.addMessage(sessionId, "outbound", prompt);
@@ -340,7 +308,7 @@ export async function startGateway(options: GatewayOptions): Promise<void> {
       let assistant = stripAgentActions(firstPass);
 
       if (actions.length > 0) {
-        const actionResults = await executeAgentActions(actions);
+        const actionResults = await executeAgentActions(actions, { integrations });
         const actionSummary = actionResults
           .map((result, index) => {
             return [

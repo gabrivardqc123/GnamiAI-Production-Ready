@@ -8,16 +8,19 @@ const DOC_TEMPLATES: Record<string, string> = {
   "AGENTS.md": "# AGENTS\n\nPrimary objective: be a reliable, practical personal assistant.\n",
   "SOUL.md":
     "# SOUL\n\nYou are GnamiBot.\nYou are the user's personal, local-first assistant.\nYour identity is stable: concise, pragmatic, action-oriented, and technically rigorous.\nNever claim to be generic or anonymous.\n",
-  "MEMORY.md":
-    "# MEMORY\n\nCore persistent facts:\n- Assistant name: GnamiBot\n- Role: personal local-first AI assistant\n\nAdd user preferences and durable facts below.\n",
-  "TOOLS.md": "# TOOLS\n\nDocument preferred tools and operating procedures.\n"
+  "MEMORY.md": "# MEMORY\n\n",
+  "TOOLS.md":
+    "# TOOLS\n\nNative integration adapters: WhatsApp, Telegram, Discord, Slack, Signal, iMessage, Spotify, Hue, Obsidian, Twitter/X, Browser, Gmail, GitHub, and more.\n\nCapabilities:\n- Browser Control: browse the web, fill forms, and extract data from sites through browser automation tools.\n- Full System Access: read/write files, run shell commands, and execute scripts with either sandboxed or full-access runtime policy.\n"
 };
 
-const LEGACY_DOC_TEMPLATES: Record<string, string> = {
-  "AGENTS.md": "# AGENTS\n\nDefine assistant behavior, goals, and boundaries.\n",
-  "SOUL.md": "# SOUL\n\nDefine identity, tone, and long-term personality.\n",
-  "MEMORY.md": "# MEMORY\n\nStore durable user preferences and recurring facts.\n",
-  "TOOLS.md": "# TOOLS\n\nDocument preferred tools and operating procedures.\n"
+const LEGACY_DOC_TEMPLATES: Record<string, string[]> = {
+  "AGENTS.md": ["# AGENTS\n\nDefine assistant behavior, goals, and boundaries.\n"],
+  "SOUL.md": ["# SOUL\n\nDefine identity, tone, and long-term personality.\n"],
+  "MEMORY.md": [
+    "# MEMORY\n\nStore durable user preferences and recurring facts.\n",
+    "# MEMORY\n\nCore persistent facts:\n- Assistant name: GnamiBot\n- Role: personal local-first AI assistant\n\nAdd user preferences and durable facts below.\n"
+  ],
+  "TOOLS.md": ["# TOOLS\n\nDocument preferred tools and operating procedures.\n"]
 };
 
 const DOC_NAME_MAP = new Map(
@@ -39,8 +42,8 @@ export async function ensureWorkspaceDocs(): Promise<void> {
     const path = join(WORKSPACE_DIR, name);
     try {
       const existing = await readFile(path, "utf-8");
-      const legacy = LEGACY_DOC_TEMPLATES[name];
-      if (legacy && existing.trim() === legacy.trim()) {
+      const legacyTemplates = LEGACY_DOC_TEMPLATES[name] ?? [];
+      if (legacyTemplates.some((legacy) => existing.trim() === legacy.trim())) {
         await writeFile(path, template, "utf-8");
       }
     } catch {

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { ensureConfig } from "../core/config.js";
 import { CONFIG_PATH } from "../utils/paths.js";
 import { resolveRuntimeEnvVar } from "../core/env.js";
+import { createIntegrationRuntime } from "../integrations/runtime.js";
 
 export async function runDoctor(): Promise<void> {
   const issues: string[] = [];
@@ -54,6 +55,13 @@ export async function runDoctor(): Promise<void> {
     await access(CONFIG_PATH, constants.R_OK | constants.W_OK);
   } catch {
     issues.push(`Config is not readable/writable: ${CONFIG_PATH}`);
+  }
+
+  const integrations = createIntegrationRuntime(config).list();
+  for (const item of integrations) {
+    if (item.enabled && !item.configured) {
+      issues.push(`Integration "${item.app}" is enabled but missing required credentials/config.`);
+    }
   }
 
   if (issues.length === 0) {

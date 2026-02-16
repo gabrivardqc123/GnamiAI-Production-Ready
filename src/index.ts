@@ -10,10 +10,32 @@ import { runUpdate } from "./commands/update.js";
 import { runOauthCodex } from "./commands/oauth.js";
 import type { ChannelName } from "./types.js";
 import { loadEnvFiles } from "./core/env.js";
+import {
+  runIntegrationConfigure,
+  runIntegrationExec,
+  runIntegrationHealth,
+  runIntegrationList
+} from "./commands/integration.js";
+import type { IntegrationName } from "./integrations/types.js";
 
 loadEnvFiles();
 
 const validChannels = new Set<ChannelName>(["webchat", "telegram"]);
+const validIntegrations = new Set<IntegrationName>([
+  "whatsapp",
+  "telegram",
+  "discord",
+  "slack",
+  "signal",
+  "imessage",
+  "spotify",
+  "hue",
+  "obsidian",
+  "twitter",
+  "browser",
+  "gmail",
+  "github"
+]);
 
 function parseChannel(value: string): ChannelName {
   if (!validChannels.has(value as ChannelName)) {
@@ -27,6 +49,13 @@ function parseThinking(value: string): "low" | "medium" | "high" {
     return value;
   }
   throw new Error(`Unsupported thinking "${value}". Use low|medium|high.`);
+}
+
+function parseIntegration(value: string): IntegrationName {
+  if (!validIntegrations.has(value as IntegrationName)) {
+    throw new Error(`Unsupported integration "${value}".`);
+  }
+  return value as IntegrationName;
 }
 
 const program = new Command();
@@ -93,6 +122,32 @@ program
   .command("codex")
   .description("Authenticate with ChatGPT/Codex OAuth and import OpenAI key")
   .action(runOauthCodex);
+
+const integration = program.command("integration").description("Native integration adapters");
+integration.command("list").description("List integration status").action(runIntegrationList);
+integration
+  .command("configure")
+  .description("Interactive integration setup")
+  .option("--app <app>", "Integration app")
+  .action(async (options: { app?: string }) => {
+    await runIntegrationConfigure(options.app ? parseIntegration(options.app) : undefined);
+  });
+integration
+  .command("health")
+  .description("Check integration health")
+  .option("--app <app>", "Integration app")
+  .action(async (options: { app?: string }) => {
+    await runIntegrationHealth(options.app ? parseIntegration(options.app) : undefined);
+  });
+integration
+  .command("exec")
+  .description("Execute native integration action")
+  .requiredOption("--app <app>", "Integration app")
+  .requiredOption("--action <action>", "Action name")
+  .option("--params <json>", "JSON payload")
+  .action(async (options: { app: string; action: string; params?: string }) => {
+    await runIntegrationExec(parseIntegration(options.app), options.action, options.params);
+  });
 
 program.parseAsync(process.argv).catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
