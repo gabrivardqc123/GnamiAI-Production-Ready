@@ -60,9 +60,25 @@ body {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 8px 10px 16px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 18px;
+}
+
+.logo-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+}
+
+.logo-text {
+  min-width: 0;
 }
 
 .logo-top {

@@ -2,6 +2,10 @@
 
 GnamiAI is a local-first personal AI gateway + CLI with real providers, real channels, and a production-usable dashboard.
 
+<p align="center">
+  <img src="./gnamiai.png" alt="GnamiAI hippopotamus logo" width="180" />
+</p>
+
 ## Features
 
 - Local gateway (`127.0.0.1:18789` by default)
