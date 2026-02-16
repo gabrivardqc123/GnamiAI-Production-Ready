@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GnamiAI Gateway Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-theme="dark">
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="logo">
+          <p class="logo-top">GNAMIAI</p>
+          <p class="logo-sub">GATEWAY DASHBOARD</p>
+        </div>
+
+        <div class="nav-group">
+          <p class="group-title">Chat</p>
+          <button class="nav-item active" data-view="chat">Chat</button>
+        </div>
+
+        <div class="nav-group">
+          <p class="group-title">Control</p>
+          <button class="nav-item" data-view="overview">Overview</button>
+          <button class="nav-item" data-view="channels">Channels</button>
+          <button class="nav-item" data-view="instances">Instances</button>
+          <button class="nav-item" data-view="sessions">Sessions</button>
+          <button class="nav-item" data-view="cron">Cron Jobs</button>
+        </div>
+
+        <div class="nav-group">
+          <p class="group-title">Agent</p>
+          <button class="nav-item" data-view="skills">Skills.md Skills</button>
+        </div>
+
+        <div class="nav-group">
+          <p class="group-title">Settings</p>
+          <button class="nav-item" data-view="config">Config Settings</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="view-title">Chat</h1>
+            <p id="view-subtitle">Direct gateway chat session for interventions.</p>
+          </div>
+          <div class="topbar-right">
+            <div id="health-pill" class="health-pill">Health: checking</div>
+            <button id="theme-toggle" class="top-btn" type="button">Dark mode</button>
+          </div>
+        </header>
+
+        <section id="view-chat" class="view active">
+          <div id="chat" class="chat-log"></div>
+          <form id="composer" class="composer" autocomplete="off">
+            <input
+              id="message"
+              placeholder="Message (Enter to send)"
+              required
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <section id="view-overview" class="view">
+          <div class="cards" id="overview-cards"></div>
+          <div class="workspace-editor">
+            <h2>Workspace Docs</h2>
+            <p>Edit assistant identity and memory directly.</p>
+            <div class="doc-tabs">
+              <button class="doc-tab active" data-doc="SOUL.md" type="button">SOUL.md</button>
+              <button class="doc-tab" data-doc="MEMORY.md" type="button">MEMORY.md</button>
+              <button class="doc-tab" data-doc="AGENTS.md" type="button">AGENTS.md</button>
+              <button class="doc-tab" data-doc="TOOLS.md" type="button">TOOLS.md</button>
+            </div>
+            <textarea id="doc-editor" class="doc-editor" spellcheck="false"></textarea>
+            <div class="doc-actions">
+              <button id="doc-save" type="button">Save Doc</button>
+              <span id="doc-status"></span>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-channels" class="view">
+          <div class="cards" id="channels-cards"></div>
+        </section>
+
+        <section id="view-instances" class="view">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Instance</th>
+                  <th>Channel</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody id="instances-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-sessions" class="view">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session ID</th>
+                  <th>Sender</th>
+                  <th>Channel</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-cron" class="view">
+          <div class="cards" id="cron-cards"></div>
+        </section>
+
+        <section id="view-skills" class="view">
+          <div class="cards" id="skills-cards"></div>
+        </section>
+
+        <section id="view-config" class="view">
+          <div class="cards" id="config-cards"></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/webchat.js"></script>
+  </body>
+</html>

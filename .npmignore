@@ -1,0 +1,13 @@
+src/
+tests/
+webchat/
+install.ps1
+tsconfig.json
+*.log
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.local
+.env.*.local
+node_modules/
