@@ -101,6 +101,71 @@ function parsePersonaInput(text: string): PersonaFields {
   if (!parsed.userName && userPhrase) parsed.userName = userPhrase;
   const langPhrase = text.match(/(?:language\s*(?:is)?|i\s*speak)\s+([a-z0-9 _-]{2,40})/i)?.[1]?.trim();
   if (!parsed.language && langPhrase) parsed.language = langPhrase;
+
+  // French natural phrasing support.
+  const assistantFr =
+    text.match(/(?:tu\s+t'?appelles|appelle[-\s]?toi|ton\s+nom\s+est)\s+([a-z0-9 _-]{2,40})/i)?.[1]?.trim();
+  if (!parsed.assistantName && assistantFr) parsed.assistantName = assistantFr;
+  const userFr =
+    text.match(/(?:mon\s+nom\s+c'?est|je\s+m'?appelle)\s+([a-z0-9 _-]{2,40})/i)?.[1]?.trim();
+  if (!parsed.userName && userFr) parsed.userName = userFr;
+  const langFr =
+    text.match(/(?:langue|je\s+parle)\s*(?:est|:)?\s*([a-z0-9 _-]{2,60})/i)?.[1]?.trim();
+  if (!parsed.language && langFr) parsed.language = langFr;
+
+  // Allow free speech patterns like: "GnamiBot, Francais Quebecois, Mon nom c'est Gabriel"
+  if (!parsed.assistantName || !parsed.language || !parsed.userName) {
+    const chunks = text
+      .split(/[,\n]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (chunks.length >= 2) {
+      const looksLikeUser = (value: string) =>
+        /(?:my\s+name|i\s+am|mon\s+nom|m'?appelle|c'?est)\b/i.test(value);
+      const looksLikeLang = (value: string) =>
+        /(?:fran[cç]ais|english|spanish|qu[eé]b[eé]cois|lang(?:uage)?|je\s+parle)/i.test(value);
+
+      if (!parsed.userName) {
+        const rawUser = chunks.find((chunk) => looksLikeUser(chunk));
+        if (rawUser) {
+          parsed.userName =
+            rawUser
+              .replace(/^(?:my\s+name\s+is|i\s+am|mon\s+nom\s+c'?est|je\s+m'?appelle)\s+/i, "")
+              .trim() || parsed.userName;
+        }
+      }
+      if (!parsed.language) {
+        const rawLang = chunks.find((chunk) => looksLikeLang(chunk));
+        if (rawLang) {
+          parsed.language = rawLang
+            .replace(/^(?:language\s*(?:is)?|lang(?:ue)?\s*(?:est)?|je\s+parle)\s+/i, "")
+            .trim();
+        }
+      }
+      if (!parsed.assistantName) {
+        const candidate = chunks.find((chunk) => !looksLikeUser(chunk) && !looksLikeLang(chunk));
+        if (candidate && candidate.length <= 40) {
+          parsed.assistantName = candidate.replace(/[^\w _-]/g, "").trim();
+        }
+      }
+      if (!parsed.userName) {
+        const remaining = chunks.filter((chunk) => {
+          const normalized = chunk.replace(/[^\w _-]/g, "").trim();
+          if (!normalized) return false;
+          if (parsed.assistantName && normalized.toLowerCase() === parsed.assistantName.toLowerCase()) {
+            return false;
+          }
+          if (looksLikeLang(chunk)) return false;
+          return true;
+        });
+        const fallbackUser = remaining[remaining.length - 1];
+        if (fallbackUser) {
+          parsed.userName = fallbackUser.replace(/[^\w _-]/g, "").trim();
+        }
+      }
+    }
+  }
+
   return parsed;
 }
 
@@ -145,10 +210,7 @@ function personaPrompt(persona: Required<PersonaFields>): string {
   if (missing.length === 0) {
     return "";
   }
-  return [
-    "Give me a name for me, your language, and your name to get started.",
-    "Format: assistant=<name>; language=<language>; user=<your-name>"
-  ].join("\n");
+  return "Before we start: what should I call myself, what language do you want, and what is your name?";
 }
 
 export async function startGateway(options: GatewayOptions): Promise<void> {
